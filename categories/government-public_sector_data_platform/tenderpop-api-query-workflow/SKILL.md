@@ -11,12 +11,21 @@ For questions about `scope_summary` (subject), winner extraction, or missing-dat
 
 ## Workflow
 
+If the user asks for `help`, for example `$tenderpop-api-query-workflow help`, return a short usage summary instead of running a TED query. The help response should list:
+- supported inputs: `question`, `logic`, `scope`, `limit`, `format`, `sort`
+- defaults: `scope=all`, `limit=25`, `format=table`, `sort=desc`, `withParties=true`
+- supported `logic` phrases
+- one free-text example
+- the note that multiple `logic` values should be separated with commas or `|`
+
+Use this help mode when the user wants a quick reminder of available query-building options without executing a live search.
+
 1. Collect inputs:
 - `question`: Free-text request, or an existing TED expert query.
 - `logic` (optional): Rule text for post-search filtering (`--logic` in the CLI).
 - `scope`: `active`/`open` or `all` (`open` is treated as `active`).
 - `limit`: 1-100 notices (default: `25`).
-- `format`: `json`, `table`, or `both`.
+- `format`: `table` (default), `json`, or `both`.
 - `sort`: `desc` (default) or `asc` (`--sort` in the CLI).
 - `withParties`: enabled by default; enrich each result with `buyer`, `winner`, and final `country`.
 

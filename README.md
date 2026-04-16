@@ -26,6 +26,18 @@ Each skill lives in its own folder and can include:
 
 `tenderpop-api-query-workflow` converts free-text procurement requests into TED expert queries, runs live TED notice searches, and applies post-search filtering rules such as include/exclude terms, country filters, value bounds, scope selection, and result formatting.
 
+## Using With Codex
+
+In Codex environments, skills from this repository can be installed with the `skill-installer` feature instead of copying folders manually.
+
+Example:
+
+```bash
+python3 ~/.codex/skills/.system/skill-installer/scripts/install-skill-from-github.py \
+  --repo yanivh/skills-europe \
+  --path categories/government-public_sector_data_platform/tenderpop-api-query-workflow
+```
+
 See:
 
 - `categories/government-public_sector_data_platform/tenderpop-api-query-workflow/README.md`

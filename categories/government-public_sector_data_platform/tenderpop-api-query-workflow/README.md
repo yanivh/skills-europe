@@ -52,6 +52,22 @@ Invoke the skill by name:
 Use $tenderpop-api-query-workflow to ...
 ```
 
+Help feature:
+- Use the help feature when you want a quick reminder of the supported inputs, defaults, `logic` phrases, and a ready-to-copy free-text example before running a real TED query.
+
+Copy/paste help block:
+
+```text
+Use $tenderpop-api-query-workflow to find water research tenders, scope open, limit 25, format table, logic: must include water, research; country: DEU; exclude construction.
+```
+
+Expected help response:
+- supported inputs: `question`, `logic`, `scope`, `limit`, `format`, `sort`
+- defaults: `scope=all`, `limit=25`, `format=table`, `sort=desc`, `withParties=true`
+- supported `logic` phrases
+- one free-text example
+- note: separate multiple include, exclude, or country values with commas or `|`
+
 Example:
 
 ```text
@@ -95,7 +111,7 @@ node categories/government-public_sector_data_platform/tenderpop-api-query-workf
 - `--scope` `active|open|all` (`open` is treated as `active`)
 - `--limit` `1..100` (default `25`)
 - `--page` page number (default `1`)
-- `--format` `json|table|both`
+- `--format` `table|json|both` (default `table`)
 - `--sort` `asc|desc` (applies to returned notice order; TED query remains `SORT BY publication-date DESC`)
 - `--output` write JSON payload to file
 - `--with-parties` / `--without-parties`

@@ -137,7 +137,7 @@ function parseArgs(argv) {
     limit: 25,
     page: 1,
     output: "",
-    format: "json",
+    format: "table",
     sort: "desc",
     withParties: true,
     help: false,
@@ -243,7 +243,7 @@ function parseArgs(argv) {
 function printUsage() {
   const usage = [
     "Usage:",
-    "  node free_text_ted_query.mjs --question \"...\" [--logic \"...\"] [--scope active|open|all] [--limit 25] [--page 1] [--output path.json] [--format json|table|both] [--sort asc|desc] [--with-parties|--without-parties]",
+    "  node free_text_ted_query.mjs --question \"...\" [--logic \"...\"] [--scope active|open|all] [--limit 25] [--page 1] [--output path.json] [--format table|json|both] [--sort asc|desc] [--with-parties|--without-parties]",
     "",
     "Examples:",
     "  node free_text_ted_query.mjs --question \"water network software in germany\" --logic \"must include: software\" --format table",
