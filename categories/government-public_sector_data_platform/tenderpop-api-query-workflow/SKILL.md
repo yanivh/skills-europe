@@ -14,9 +14,10 @@ For questions about `scope_summary` (subject), winner extraction, or missing-dat
 1. Collect inputs:
 - `question`: Free-text request, or an existing TED expert query.
 - `logic` (optional): Rule text for post-search filtering (`--logic` in the CLI).
-- `scope`: `active` or `all`.
-- `limit`: 1-100 notices.
+- `scope`: `active`/`open` or `all` (`open` is treated as `active`).
+- `limit`: 1-100 notices (default: `25`).
 - `format`: `json`, `table`, or `both`.
+- `sort`: `desc` (default) or `asc` (`--sort` in the CLI).
 - `withParties`: enabled by default; enrich each result with `buyer`, `winner`, and final `country`.
 
 2. Build or normalize query:
@@ -27,7 +28,7 @@ For questions about `scope_summary` (subject), winner extraction, or missing-dat
   - `classification-cpv IN (...)` from CPV mentions.
   - `PD=...` for detected date hints.
   - `total-value=(>=...)` or `total-value=(<=...)` for value hints.
-- Append `SORT BY publication-number DESC` when absent.
+- Keep TED query sort syntax as `SORT BY publication-date DESC`; apply `--sort asc|desc` to the returned notices order (default `desc`).
 
 3. Run TED search:
 - From the repository root, use `categories/government-public_sector_data_platform/tenderpop-api-query-workflow/scripts/free_text_ted_query.mjs`.
@@ -69,15 +70,17 @@ node categories/government-public_sector_data_platform/tenderpop-api-query-workf
   --question "water network asset management software in germany and france over 1M EUR" \
   --scope all \
   --limit 25 \
+  --sort desc \
   --logic "must include: software, asset; exclude: wastewater treatment plant" \
   --format table
 ```
 
 ```bash
 node categories/government-public_sector_data_platform/tenderpop-api-query-workflow/scripts/free_text_ted_query.mjs \
-  --question 'FT~("drainage" OR "stormwater") AND CY IN (DEU NLD) SORT BY publication-number DESC' \
+  --question 'FT~("drainage" OR "stormwater") AND CY IN (DEU NLD) SORT BY publication-date DESC' \
   --scope active \
   --limit 15 \
+  --sort asc \
   --format both \
   --output tmp/ted-results.json
 ```

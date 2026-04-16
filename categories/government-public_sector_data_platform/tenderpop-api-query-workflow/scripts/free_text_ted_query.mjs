@@ -138,6 +138,7 @@ function parseArgs(argv) {
     page: 1,
     output: "",
     format: "json",
+    sort: "desc",
     withParties: true,
     help: false,
   };
@@ -173,7 +174,8 @@ function parseArgs(argv) {
     }
 
     if (flag === "--scope" && typeof nextValue === "string") {
-      args.scope = nextValue.toLowerCase() === "active" ? "active" : "all";
+      const normalizedScope = nextValue.toLowerCase();
+      args.scope = normalizedScope === "active" || normalizedScope === "open" ? "active" : "all";
       if (consumeNext) i += 1;
       continue;
     }
@@ -211,6 +213,15 @@ function parseArgs(argv) {
       continue;
     }
 
+    if (flag === "--sort" && typeof nextValue === "string") {
+      const normalized = nextValue.toLowerCase();
+      if (normalized === "asc" || normalized === "desc") {
+        args.sort = normalized;
+      }
+      if (consumeNext) i += 1;
+      continue;
+    }
+
     if (flag === "--with-parties") {
       args.withParties = true;
       continue;
@@ -232,13 +243,53 @@ function parseArgs(argv) {
 function printUsage() {
   const usage = [
     "Usage:",
-    "  node free_text_ted_query.mjs --question \"...\" [--logic \"...\"] [--scope active|all] [--limit 25] [--page 1] [--output path.json] [--format json|table|both] [--with-parties|--without-parties]",
+    "  node free_text_ted_query.mjs --question \"...\" [--logic \"...\"] [--scope active|open|all] [--limit 25] [--page 1] [--output path.json] [--format json|table|both] [--sort asc|desc] [--with-parties|--without-parties]",
     "",
     "Examples:",
     "  node free_text_ted_query.mjs --question \"water network software in germany\" --logic \"must include: software\" --format table",
-    "  node free_text_ted_query.mjs --question 'FT~(\"stormwater\") AND CY IN (DEU)' --scope active --limit 10",
+    "  node free_text_ted_query.mjs --question 'FT~(\"stormwater\") AND CY IN (DEU)' --scope active --limit 10 --sort asc",
   ];
   process.stdout.write(`${usage.join("\n")}\n`);
+}
+
+function applySortClause(query, sortDirection) {
+  // Keep TED API query stable on latest notices by date.
+  const direction = "DESC";
+  if (/\bSORT BY\b/i.test(query)) {
+    return query.replace(
+      /\bSORT\s+BY\s+[a-z-]+\s+(ASC|DESC)\b/i,
+      `SORT BY publication-date ${direction}`,
+    );
+  }
+  return `${query} SORT BY publication-date ${direction}`;
+}
+
+function comparePublicationDates(left, right, sortDirection) {
+  const leftDateRaw = String(left?.publicationDate ?? "");
+  const rightDateRaw = String(right?.publicationDate ?? "");
+  const leftDate = Date.parse(leftDateRaw);
+  const rightDate = Date.parse(rightDateRaw);
+
+  if (Number.isFinite(leftDate) && Number.isFinite(rightDate) && leftDate !== rightDate) {
+    return sortDirection === "asc" ? leftDate - rightDate : rightDate - leftDate;
+  }
+
+  const leftPubRaw = String(left?.publicationNumber ?? "");
+  const rightPubRaw = String(right?.publicationNumber ?? "");
+  const leftPub = Number.parseInt(leftPubRaw, 10);
+  const rightPub = Number.parseInt(rightPubRaw, 10);
+
+  if (Number.isFinite(leftPub) && Number.isFinite(rightPub) && leftPub !== rightPub) {
+    return sortDirection === "asc" ? leftPub - rightPub : rightPub - leftPub;
+  }
+
+  return sortDirection === "asc"
+    ? leftPubRaw.localeCompare(rightPubRaw)
+    : rightPubRaw.localeCompare(leftPubRaw);
+}
+
+function sortNotices(notices, sortDirection) {
+  return [...notices].sort((left, right) => comparePublicationDates(left, right, sortDirection));
 }
 
 function normalizeSpaces(value) {
@@ -252,7 +303,6 @@ function hasTedSyntax(text) {
 function toTedCountryCode(value) {
   const upper = value.toUpperCase();
   if (COUNTRY_CODE_MAP[upper]) return COUNTRY_CODE_MAP[upper];
-  if (/^[A-Z]{3}$/.test(upper)) return upper;
   return null;
 }
 
@@ -353,16 +403,14 @@ function cleanBareTerms(text, phrases) {
   return [...new Set(tokens)].slice(0, 10);
 }
 
-function generateTedQuery(question) {
+function generateTedQuery(question, sortDirection = "desc") {
   const normalized = normalizeSpaces(question);
   if (!normalized) {
-    return 'FT~("procurement") SORT BY publication-number DESC';
+    return applySortClause('FT~("procurement")', sortDirection);
   }
 
   if (hasTedSyntax(normalized)) {
-    return /\bSORT BY\b/i.test(normalized)
-      ? normalized
-      : `${normalized} SORT BY publication-number DESC`;
+    return applySortClause(normalized, sortDirection);
   }
 
   const phrases = extractQuotedPhrases(normalized);
@@ -395,7 +443,7 @@ function generateTedQuery(question) {
   if (minValue !== null) clauses.push(`total-value=(>=${minValue})`);
   if (maxValue !== null) clauses.push(`total-value=(<=${maxValue})`);
 
-  return `${clauses.join(" AND ")} SORT BY publication-number DESC`;
+  return applySortClause(clauses.join(" AND "), sortDirection);
 }
 
 function toNumber(rawValue, suffix) {
@@ -411,6 +459,7 @@ function parseLogicPrompt(logicPrompt) {
   const normalized = logicPrompt ?? "";
   const includeTerms = [];
   const excludeTerms = [];
+  const explicitCountries = [];
 
   const segments = normalized
     .split(/[;\n]+/)
@@ -437,10 +486,30 @@ function parseLogicPrompt(logicPrompt) {
           .map((entry) => entry.trim().toLowerCase())
           .filter(Boolean),
       );
+      continue;
+    }
+
+    const countryMatch = segment.match(/^country\s*:\s*(.+)$/i);
+    if (countryMatch) {
+      explicitCountries.push(
+        ...countryMatch[1]
+          .split(/[,\|]/)
+          .map((entry) => entry.trim())
+          .filter(Boolean)
+          .map((entry) => {
+            const upper = entry.toUpperCase();
+            const byCode = normalizeCountryCode(upper);
+            if (byCode) return byCode;
+            const byName = COUNTRY_NAME_MAP[entry.toLowerCase()];
+            return byName ?? null;
+          })
+          .filter(Boolean),
+      );
     }
   }
 
-  const countries = extractCountries(normalized);
+  const inferredCountries = extractCountries(normalized);
+  const countries = explicitCountries.length > 0 ? explicitCountries : inferredCountries;
 
   let minValue = null;
   let maxValue = null;
@@ -452,7 +521,7 @@ function parseLogicPrompt(logicPrompt) {
   return {
     includeTerms: [...new Set(includeTerms)],
     excludeTerms: [...new Set(excludeTerms)],
-    countries,
+    countries: [...new Set(countries)],
     minValue,
     maxValue,
   };
@@ -866,7 +935,7 @@ async function main() {
     process.exit(args.help ? 0 : 1);
   }
 
-  const generatedQuery = generateTedQuery(args.question);
+  const generatedQuery = generateTedQuery(args.question, args.sort);
   const rules = parseLogicPrompt(args.logic);
 
   const apiResult = await searchTed({
@@ -933,12 +1002,15 @@ async function main() {
     filtered.push(...enriched);
   }
 
+  const sortedNotices = sortNotices(filtered, args.sort);
+
   const output = {
     input: {
       question: args.question,
       logicPrompt: args.logic,
       scope: args.scope,
       limit: args.limit,
+      sort: args.sort,
       page: args.page,
       withParties: args.withParties,
     },
@@ -950,10 +1022,10 @@ async function main() {
     },
     scan: {
       hasRules,
-      matchedCount: filtered.length,
+      matchedCount: sortedNotices.length,
       allEvaluatedCount: evaluated.length,
     },
-    notices: filtered,
+    notices: sortedNotices,
   };
 
   await maybeWriteOutput(args.output, output);
