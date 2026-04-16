@@ -1,0 +1,4 @@
+interface:
+  display_name: "Tenderpop Query Workflow"
+  short_description: "Free-text TED search and rule filtering"
+  default_prompt: "Use $tenderpop-api-query-workflow to convert my natural-language request into a TED query, run the search, and apply logic rules."
