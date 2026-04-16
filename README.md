@@ -1,20 +1,36 @@
 # Skills Europe
 
-Curated agent skills for European developers.
+European-focused agent skills and supporting references.
+
+## Current Scope
+
+This repository currently contains a single category:
+
+- `categories/government-public_sector_data_platform/`
+
+Within that category, the current skill is:
+
+- `categories/government-public_sector_data_platform/tenderpop-api-query-workflow/`
 
 ## Repository Structure
 
-This is a monorepo that groups skills by category:
+Each skill lives in its own folder and can include:
 
-- `categories/tax-and-finance/`
-- `categories/government-services/`
-- `categories/localization/`
-- `categories/developer-tools/`
+- `SKILL.md` for the skill definition
+- `README.md` for installation and usage guidance
+- `agents/` for agent-facing presets
+- `references/` for supporting rules and background material
+- `scripts/` for executable helpers used by the skill
 
-Each skill lives in its own folder with a `SKILL.md` file.
+## Current Skill
 
-## Add a New Skill
+`tenderpop-api-query-workflow` converts free-text procurement requests into TED expert queries, runs live TED notice searches, and applies post-search filtering rules such as include/exclude terms, country filters, value bounds, scope selection, and result formatting.
 
-1. Choose a category under `categories/`.
-2. Create a new folder using kebab-case (for example: `vat-validator`).
-3. Add `SKILL.md` with the skill purpose, triggers, workflow, and examples.
+See:
+
+- `categories/government-public_sector_data_platform/tenderpop-api-query-workflow/README.md`
+- `categories/government-public_sector_data_platform/tenderpop-api-query-workflow/SKILL.md`
+
+## Adding More Skills
+
+When new skills are added, place them under `categories/<category-name>/<skill-name>/` and include at minimum a `SKILL.md` file.

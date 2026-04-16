@@ -9,7 +9,8 @@ Convert natural-language procurement requests into TED expert queries, run live 
 - Applies local logic filters (`--logic`) on returned notices.
 - Enriches notices with buyer/winner details (`--with-parties` by default).
 - Supports output as `json`, `table`, or `both`.
-- Supports output ordering with `--sort asc|desc` (default: `desc`).
+- Keeps TED API query sorting on latest notices with `SORT BY publication-date DESC`.
+- Supports local output ordering with `--sort asc|desc` (default: `desc`).
 
 ## Install
 
@@ -58,7 +59,7 @@ Use $tenderpop-api-query-workflow to find water network asset management softwar
 ```
 
 ```text
-Use $tenderpop-api-query-workflow to find water research tenders, scope open, limit 25, format table, logic: must include water and research; country: DEU; exclude construction.
+Use $tenderpop-api-query-workflow to find water research tenders, scope open, limit 25, format table, logic: must include water, research; country: DEU; exclude construction.
 ```
 
 More free-text chat examples:
@@ -68,6 +69,10 @@ Country-only filter:
 ```text
 Use $tenderpop-api-query-workflow to find stormwater drainage tenders, scope all, format table, logic: country: DEU, NLD.
 ```
+
+Note:
+- Use commas or `|` to separate multiple include, exclude, or country values inside `logic`.
+- Example: `must include water, research; country: DEU, FRA`
 
 ## Use via CLI script
 
@@ -91,7 +96,7 @@ node categories/government-public_sector_data_platform/tenderpop-api-query-workf
 - `--limit` `1..100` (default `25`)
 - `--page` page number (default `1`)
 - `--format` `json|table|both`
-- `--sort` `asc|desc` (applies to returned notice order)
+- `--sort` `asc|desc` (applies to returned notice order; TED query remains `SORT BY publication-date DESC`)
 - `--output` write JSON payload to file
 - `--with-parties` / `--without-parties`
 
@@ -126,7 +131,7 @@ node categories/government-public_sector_data_platform/tenderpop-api-query-workf
   --scope open \
   --limit 25 \
   --format table \
-  --logic "must include water and research; country: DEU; exclude construction"
+  --logic "must include water, research; country: DEU; exclude construction"
 ```
 
 
