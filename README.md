@@ -4,13 +4,15 @@ European-focused agent skills and supporting references.
 
 ## Current Scope
 
-This repository currently contains a single category:
+This repository currently contains two categories:
 
 - `categories/government-public_sector_data_platform/`
+- `categories/sport/`
 
-Within that category, the current skill is:
+Within these categories, the current skills are:
 
 - `categories/government-public_sector_data_platform/tenderpop-api-query-workflow/`
+- `categories/sport/de/book_Acourse_fitnessfirst/`
 
 ## Repository Structure
 
