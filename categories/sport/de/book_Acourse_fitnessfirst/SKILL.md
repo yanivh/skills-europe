@@ -1,16 +1,18 @@
 ---
 name: book-acourse-fitnessfirst
-description: Automatisiert Fitness First Kursbuchungen im Mitgliederbereich mit deutschem UI-Flow (`Mitglieder-Login` -> `Logge dich ein!` -> `Kursbuchung`) und klickt `Kurs buchen`, sobald ein passender Slot verfuegbar ist.
+description: Automatisiert Fitness First Kursbuchungen und Kurslisten im Mitgliederbereich mit deutschem UI-Flow (`Mitglieder-Login` -> `Logge dich ein!` -> `Kursbuchung`). Nutzt `list` zum Finden offener Slots und `book` zum Buchen passender Kursoptionen.
 ---
 
 # Fitness First Course Booking (DE)
 
-Nutze dieses Skill, wenn ein Kurs im Fitness First Mitgliederbereich automatisch gebucht werden soll.
+Nutze dieses Skill, wenn Kurse im Fitness First Mitgliederbereich gefunden oder automatisch gebucht werden sollen.
 
 ## Benoetigte Eingaben
 
+- `mode` (`list` oder `book`)
 - `email` (Login)
 - `password` (Login)
+- `city` (optional, z. B. `Berlin`, `Duesseldorf`)
 - `club` (vollstaendig oder teilweise, z. B. `Steglitz`, `Berlin Steglitz`, `Berlin - Steglitz SSC`)
 - `course` (vollstaendig oder teilweise, z. B. `Yoga`, `Hyrox`, `Yoga (L1/L2)`)
 - `date` (optional, z. B. `Mittwoch, 29. April`, `Wednesday, 29. April` oder `YYYY-MM-DD`)
@@ -26,18 +28,73 @@ Nutze dieses Skill, wenn ein Kurs im Fitness First Mitgliederbereich automatisch
 5. EGYM-Login ausfuellen (`Email address`, `Password`) und `Sign in` klicken.
 6. Nach erfolgreichem Login auf `Kursbuchung` wechseln (direkt oder ueber `Kurse & Termine`).
 7. Auf `https://mein.fitnessfirst.de/member/courses` sicherstellen.
-8. Links filtern:
-- `Club auswaehlen` -> besten passenden `club` waehlen
+8. Suchbereich festlegen:
+- Wenn `club` gesetzt ist: besten passenden Club waehlen.
+- Wenn `city` gesetzt und `club` leer ist: alle sichtbaren Clubs dieser Stadt durchlaufen.
+- Wenn weder `city` noch `club` gesetzt ist: `defaultClub` nutzen, falls vorhanden; sonst mit klarer Ursache beenden.
+9. Fuer jeden relevanten Club:
+- `Club auswaehlen`
 - Kursbutton mit bestmoeglich passendem `course` auswaehlen
-9. Buchungsmodus entscheiden:
-- Wenn `date` und/oder `time` gesetzt sind: passenden Eintrag im `Kursplan` finden.
-- Wenn weder `date` noch `time` gesetzt sind: alle sichtbaren `Kurs buchen`-Buttons fuer den gewaehlten Kurs eins nach dem anderen klicken.
-10. Nach jedem Klick auf Erfolgsmeldung/Statuswechsel pruefen (z. B. `Kurs gebucht`, Button wird `... stornieren`).
-11. Ergebnis strukturiert zurueckgeben:
-- `booked` (`true`/`false`)
-- `club`, `course`, `date`, `time`
-- `statusMessage`
-- `reason` (`class_not_found`, `button_not_available`, `login_failed`, `page_changed`)
+- rechte Kursliste scannen
+10. Modus anwenden:
+- `list`: offene, passende Moeglichkeiten sammeln und nichts klicken
+- `book`: genau passenden Slot finden und `Kurs buchen` klicken
+11. Nach jedem Buchungsklick auf Erfolgsmeldung/Statuswechsel pruefen (z. B. `Kurs gebucht`, Button wird `... stornieren`).
+12. Ergebnis strukturiert zurueckgeben.
+
+## Modus `list`
+
+Nutze `list`, wenn der Nutzer Formulierungen wie diese verwendet:
+
+- `list open for booking Yoga-kurse`
+- `show me possibilities`
+- `find available courses`
+- `what is open in Berlin`
+
+Verhalten:
+
+1. Keine Buchung ausloesen.
+2. Nur passende Slots sammeln.
+3. Standardmaessig nur aktuell buchbare Slots (`Kurs buchen`) zurueckgeben.
+4. Optionale Filter anwenden:
+- `city`
+- `club`
+- `course`
+- `date`
+- `time`
+5. Falls `city` gesetzt und `club` leer ist:
+- alle passenden Stadt-Clubs nacheinander pruefen
+- Ergebnisse ueber alle Clubs aggregieren
+
+## Modus `book`
+
+Nutze `book`, wenn der Nutzer explizit buchen will, z. B.:
+
+- `book it`
+- `book Yoga at 19:00`
+- `book the Steglitz one`
+
+Verhalten:
+
+1. Genau einen passenden Slot bestimmen.
+2. Nur klicken, wenn der Slot aktuell buchbar ist.
+3. Falls der Nutzer vorher eine Liste angefordert hat, kann `book` die gleichen Kriterien erneut verwenden oder auf eine gewaehlte Option aus der Liste zielen.
+
+## Regel fuer `city`
+
+Wenn `city` angegeben ist und `club` fehlt:
+
+- alle sichtbaren Clubs matchen, deren Name zur Stadt passt
+- Beispiel:
+  - `Berlin` -> alle `Berlin - ...` Clubs
+  - `Duesseldorf` -> alle `Duesseldorf - ...` Clubs
+- fuer jeden passenden Club Kurs und Slots pruefen
+- Ergebnisse gesammelt zurueckgeben
+
+Wenn sowohl `city` als auch `club` gesetzt sind:
+
+- `club` hat Vorrang
+- `city` dient nur als weiches Zusatzsignal
 
 ## Regel fuer fehlendes Datum/Uhrzeit
 
@@ -47,6 +104,11 @@ Wenn `date` und `time` beide fehlen, gilt:
 - Danach alle aktuell sichtbaren Buttons mit Text `Kurs buchen` bzw. `... buchen` in der Kursliste buchen.
 - Nach jedem Buchungsklick kurz warten und die Liste neu pruefen.
 - Falls ein Slot bereits `... stornieren`, `Kurs ist bereits voll` oder `Buchung nicht mehr moeglich` zeigt, diesen ueberspringen.
+
+In `list`-Mode ohne `date`/`time`:
+
+- alle sichtbaren buchbaren Slots des passenden Kurses zurueckgeben
+- nichts klicken
 
 ## Regel fuer deutsche und englische Wochentage
 
@@ -297,6 +359,47 @@ Nach jedem Lauf ein JSON-objekt mit folgenden Feldern zurueckgeben:
 - `booking_not_open_yet`
 - `retry_exhausted`
 - `automation_error`
+
+## Verbindliches Ergebnisformat fuer `list`
+
+Im `list`-Mode dieses Format verwenden:
+
+```json
+{
+  "mode": "list",
+  "reason": "success",
+  "statusMessage": "2 open slots found",
+  "requested": {
+    "city": "Berlin",
+    "club": null,
+    "course": "Yoga",
+    "date": "Wednesday, 29. April",
+    "time": "17",
+    "runAt": null
+  },
+  "results": [
+    {
+      "clubMatched": "Berlin - Steglitz SSC",
+      "courseMatched": "Yoga (L1/L2)",
+      "dateLabel": "Mittwoch, 29. April",
+      "timeLabel": "17:30",
+      "actionLabel": "Kurs buchen",
+      "bookingPossible": true,
+      "matchStrategy": "city+token+hour"
+    }
+  ]
+}
+```
+
+`results`-Eintrag:
+
+- `clubMatched`
+- `courseMatched`
+- `dateLabel`
+- `timeLabel`
+- `actionLabel`
+- `bookingPossible`
+- `matchStrategy`
 
 ## Sicherheitsregeln
 
