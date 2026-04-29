@@ -205,6 +205,56 @@ Empfohlenes Verhalten:
 3. Nur sichere Retries nutzen (keine Doppelbuchung).
 4. Nach dem Versuch immer ein strukturiertes Ergebnis zurueckgeben.
 
+## Optional: Multi-User Profile-Konfiguration (`profiles.json`)
+
+Fuer Plattformen wie nanoclaw kann optional eine zentrale `profiles.json` genutzt werden.
+Ziel:
+
+- mehrere Nutzer verwalten
+- Default-Club/Default-Kurse hinterlegen
+- mehrere wiederkehrende Zeitslots definieren
+- Job-Trigger automatisch 24 Stunden vor Kurszeit starten
+
+Empfohlene Struktur:
+
+```json
+{
+  "users": {
+    "yaniv": {
+      "email": "yaniv@example.com",
+      "password": "<SECRET>",
+      "defaultClub": "Steglitz SSC",
+      "defaultCourse": "Hyrox",
+      "defaultLessons": [
+        { "course": "Hyrox", "time": "19:00" },
+        { "course": "Red Bull Gym Clash", "time": "17:30" }
+      ],
+      "schedule": [
+        { "day": "saturday", "time": "10:00" },
+        { "day": "saturday", "time": "11:00" },
+        { "day": "sunday", "time": "11:00" },
+        { "day": "wednesday", "time": "19:00" },
+        { "day": "wednesday", "time": "20:00" }
+      ]
+    }
+  }
+}
+```
+
+Regeln:
+
+- `defaultLessons` ist optional und ergaenzt `defaultCourse`.
+- `schedule` darf mehrere Eintraege pro Tag enthalten.
+- Ein `schedule`-Eintrag darf optional `course`/`club` enthalten und ueberschreibt dann Defaults.
+- Wochentage in Deutsch oder Englisch akzeptieren (inkl. Mapping-Regeln oben).
+
+24h-Logik:
+
+1. Fuer jeden `schedule`-Eintrag naechsten passenden Kurstermin berechnen.
+2. Triggerzeit = Kursdatum/Zeit minus 24 Stunden.
+3. Genau zu Triggerzeit den Buchungsworkflow starten.
+4. Bei bereits gebuchtem Slot nicht erneut buchen (idempotent).
+
 ## Verbindliches Ergebnisformat
 
 Nach jedem Lauf ein JSON-objekt mit folgenden Feldern zurueckgeben:

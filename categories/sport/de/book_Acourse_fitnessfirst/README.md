@@ -15,6 +15,7 @@ Portables Skill zur automatischen Kursbuchung mit deutschem Mitgliederbereich-Fl
 - Prueft rechts Datum/Uhrzeit und klickt `Kurs buchen`, wenn verfuegbar.
 - Wenn `date` und `time` fehlen, bucht es alle sichtbaren `Kurs buchen`-Slots fuer den gewaehlten Kurs.
 - Unterstuetzt zeitgesteuerten Start (`runAt`) in der Zielplattform.
+- Optional mit `profiles.json` fuer Multi-User, mehrere Defaults und mehrere Zeitslots pro Tag.
 - Verwendet deterministische Matching-Regeln und liefert ein strukturiertes JSON-Ergebnis.
 
 ## Publication-Tight Guarantees
@@ -24,6 +25,13 @@ Portables Skill zur automatischen Kursbuchung mit deutschem Mitgliederbereich-Fl
 - Bei `Kursbuchung noch nicht moeglich`: automatische Refresh-Retries (max. 4 Versuche).
 - Nach Klick verbindliche Erfolgskontrolle (`Kurs gebucht` oder Statuswechsel auf `stornieren`).
 - Standardisiertes Resultat mit `requested`, `resolved`, `bookedSlots`, `skippedSlots`, `reason`.
+
+## Optional: `profiles.json` fuer nanoclaw
+
+- Unterstuetzt mehrere Benutzerprofile.
+- Unterstuetzt wiederkehrende Slots pro Nutzer (`schedule`).
+- Unterstuetzt optionale Mehrfach-Defaults (`defaultLessons`).
+- Empfohlene Triggerlogik: Buchungsjob 24 Stunden vor geplantem Slot starten.
 
 ## Praxis-Hinweis aus Test
 
