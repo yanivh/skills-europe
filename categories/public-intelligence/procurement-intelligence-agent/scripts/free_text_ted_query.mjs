@@ -140,6 +140,7 @@ function parseArgs(argv) {
     format: "table",
     sort: "desc",
     withParties: true,
+    requirementsAnalysis: false,
     help: false,
   };
 
@@ -231,6 +232,11 @@ function parseArgs(argv) {
       args.withParties = false;
       continue;
     }
+
+    if (flag === "--requirements-analysis") {
+      args.requirementsAnalysis = true;
+      continue;
+    }
   }
 
   if (!args.question && positional.length > 0) {
@@ -243,7 +249,7 @@ function parseArgs(argv) {
 function printUsage() {
   const usage = [
     "Usage:",
-    "  node free_text_ted_query.mjs --question \"...\" [--logic \"...\"] [--scope active|open|all] [--limit 25] [--page 1] [--output path.json] [--format table|json|both] [--sort asc|desc] [--with-parties|--without-parties]",
+    "  node free_text_ted_query.mjs --question \"...\" [--logic \"...\"] [--scope active|open|all] [--limit 25] [--page 1] [--output path.json] [--format table|json|both] [--sort asc|desc] [--with-parties|--without-parties] [--requirements-analysis]",
     "",
     "Examples:",
     "  node free_text_ted_query.mjs --question \"water network software in germany\" --logic \"must include: software\" --format table",
@@ -298,6 +304,10 @@ function normalizeSpaces(value) {
 
 function hasTedSyntax(text) {
   return /\b(FT~|CY\s+IN|classification-cpv\s+IN|PD=|total-value=|SORT BY)\b/i.test(text);
+}
+
+function isPublicationNumber(value) {
+  return /^\d{6}-\d{4}$/.test(String(value ?? "").trim());
 }
 
 function toTedCountryCode(value) {
@@ -360,10 +370,10 @@ function extractValueBounds(text) {
   let minValue = null;
   let maxValue = null;
 
-  const minMatch = input.match(/(?:min(?:imum)?|over|above|greater than|at least)\s*(?:eur|euro|€)?\s*([\d.,]+)\s*([kmb])?/i);
+  const minMatch = input.match(/(?:min(?:imum)?(?:\s+value)?|over|above|greater than|at least)\s*(?:eur|euro|€)?\s*([\d.,]+)\s*([kmb])?/i);
   if (minMatch) minValue = parseAmount(minMatch[1], minMatch[2]);
 
-  const maxMatch = input.match(/(?:max(?:imum)?|under|below|less than|at most)\s*(?:eur|euro|€)?\s*([\d.,]+)\s*([kmb])?/i);
+  const maxMatch = input.match(/(?:max(?:imum)?(?:\s+value)?|under|below|less than|at most)\s*(?:eur|euro|€)?\s*([\d.,]+)\s*([kmb])?/i);
   if (maxMatch) maxValue = parseAmount(maxMatch[1], maxMatch[2]);
 
   return { minValue, maxValue };
@@ -407,6 +417,10 @@ function generateTedQuery(question, sortDirection = "desc") {
   const normalized = normalizeSpaces(question);
   if (!normalized) {
     return applySortClause('FT~("procurement")', sortDirection);
+  }
+
+  if (isPublicationNumber(normalized)) {
+    return `publication-number=${normalized}`;
   }
 
   if (hasTedSyntax(normalized)) {
@@ -513,9 +527,9 @@ function parseLogicPrompt(logicPrompt) {
 
   let minValue = null;
   let maxValue = null;
-  const minMatch = normalized.match(/(?:min(?:imum)?|over|above|greater than|at least)\s*(?:eur|euro|€)?\s*([\d.,]+)\s*([kmb])?/i);
+  const minMatch = normalized.match(/(?:min(?:imum)?(?:\s+value)?|over|above|greater than|at least)\s*(?:eur|euro|€)?\s*([\d.,]+)\s*([kmb])?/i);
   if (minMatch) minValue = toNumber(minMatch[1], minMatch[2]);
-  const maxMatch = normalized.match(/(?:max(?:imum)?|under|below|less than|at most)\s*(?:eur|euro|€)?\s*([\d.,]+)\s*([kmb])?/i);
+  const maxMatch = normalized.match(/(?:max(?:imum)?(?:\s+value)?|under|below|less than|at most)\s*(?:eur|euro|€)?\s*([\d.,]+)\s*([kmb])?/i);
   if (maxMatch) maxValue = toNumber(maxMatch[1], maxMatch[2]);
 
   return {
@@ -763,6 +777,123 @@ function parseBuyerAndWinnersFromXml(xml) {
   };
 }
 
+function collectStringsDeep(value) {
+  if (value === null || value === undefined) return [];
+  if (typeof value === "string") return [value];
+  if (typeof value === "number" || typeof value === "boolean") return [String(value)];
+  if (Array.isArray(value)) {
+    return value.flatMap((entry) => collectStringsDeep(entry));
+  }
+  if (typeof value === "object") {
+    return Object.values(value).flatMap((entry) => collectStringsDeep(entry));
+  }
+  return [];
+}
+
+function cleanAnalysisText(value) {
+  return normalizeSpaces(
+    String(value ?? "")
+      .replace(/<[^>]+>/g, " ")
+      .replace(/\s+/g, " ")
+      .trim(),
+  );
+}
+
+function uniqueNonEmpty(values) {
+  return [...new Set(
+    values
+      .map((value) => cleanAnalysisText(value))
+      .filter((value) => Boolean(value) && value.length <= 320),
+  )];
+}
+
+function pickEvidenceByKeywords(lines, keywords, limit = 6) {
+  const lowered = keywords.map((keyword) => keyword.toLowerCase());
+  const matches = [];
+  for (const line of lines) {
+    const lowerLine = line.toLowerCase();
+    if (lowered.some((keyword) => lowerLine.includes(keyword))) {
+      matches.push(line);
+      if (matches.length >= limit) break;
+    }
+  }
+  return uniqueNonEmpty(matches);
+}
+
+function buildRequirementsAnalysis(lines, context = {}) {
+  const requiredDocuments = pickEvidenceByKeywords(lines, [
+    "document",
+    "certificate",
+    "declaration",
+    "form",
+    "evidence",
+    "attestation",
+    "proof",
+    "technical offer",
+    "financial offer",
+  ]);
+  const technicalRequirements = pickEvidenceByKeywords(lines, [
+    "technical",
+    "specification",
+    "requirement",
+    "performance",
+    "minimum",
+    "quality",
+    "service level",
+    "standard",
+    "cpv",
+  ]);
+  const submissionAndDeadlines = pickEvidenceByKeywords(lines, [
+    "deadline",
+    "date",
+    "time",
+    "submit",
+    "submission",
+    "receipt",
+    "opening",
+    "tender",
+    "clarification",
+  ]);
+  const legalAndCommercialConditions = pickEvidenceByKeywords(lines, [
+    "contract",
+    "term",
+    "payment",
+    "liability",
+    "insurance",
+    "penalty",
+    "guarantee",
+    "warranty",
+    "legal",
+    "commercial",
+    "framework agreement",
+  ]);
+
+  const assumptionsAndGaps = [];
+  if (requiredDocuments.length === 0) {
+    assumptionsAndGaps.push("Required documents are not explicitly listed in available notice data.");
+  }
+  if (technicalRequirements.length === 0) {
+    assumptionsAndGaps.push("Technical requirements are incomplete; full tender dossier may be required.");
+  }
+  if (submissionAndDeadlines.length === 0) {
+    assumptionsAndGaps.push("Submission timeline details are missing from parsed fields.");
+  }
+  if (legalAndCommercialConditions.length === 0) {
+    assumptionsAndGaps.push("Legal/commercial terms are not fully available in current extraction.");
+  }
+  if (!context.hasDetail && !context.hasXml) {
+    assumptionsAndGaps.push("Notice detail and XML could not be fetched; analysis confidence is low.");
+  }
+
+  return {
+    requiredDocuments,
+    technicalRequirements,
+    submissionAndDeadlines,
+    legalAndCommercialConditions,
+    assumptionsAndGaps,
+  };
+}
+
 function extractValueFromNotice(notice) {
   const candidates = [
     notice["total-value"],
@@ -834,6 +965,7 @@ function conciseNotice(notice, evaluation) {
     buyerCountry: evaluation.noticeCountry,
     winnerName: null,
     winnerNames: [],
+    requirementsAnalysis: null,
     estimatedValue: evaluation.noticeValue,
     score: evaluation.score,
     pass: evaluation.pass,
@@ -935,6 +1067,7 @@ async function main() {
     process.exit(args.help ? 0 : 1);
   }
 
+  const directNoticeLookup = isPublicationNumber(args.question);
   const generatedQuery = generateTedQuery(args.question, args.sort);
   const rules = parseLogicPrompt(args.logic);
 
@@ -958,8 +1091,13 @@ async function main() {
     rules.maxValue !== null;
 
   const filtered = hasRules ? evaluated.filter((row) => row.pass) : evaluated;
+  const shouldRunRequirementsAnalysis =
+    args.requirementsAnalysis ||
+    rules.minValue !== null ||
+    rules.maxValue !== null ||
+    directNoticeLookup;
 
-  if (args.withParties && filtered.length > 0) {
+  if ((args.withParties || shouldRunRequirementsAnalysis) && filtered.length > 0) {
     const enriched = await Promise.all(
       filtered.map(async (row) => {
         const detail = await fetchNoticeDetail(row.publicationNumber);
@@ -976,18 +1114,33 @@ async function main() {
           !extracted.buyerCountry ||
           !extracted.winnerName;
 
-        if (needsXmlFallback) {
-          const xml = await fetchNoticeXml(row.publicationNumber);
-          if (xml) {
-            const extractedFromXml = parseBuyerAndWinnersFromXml(xml);
+        let xmlText = null;
+        const needsXmlData = needsXmlFallback || shouldRunRequirementsAnalysis;
+        if (needsXmlData) {
+          xmlText = await fetchNoticeXml(row.publicationNumber);
+        }
+
+        if (needsXmlFallback && xmlText) {
+          const extractedFromXml = parseBuyerAndWinnersFromXml(xmlText);
             extracted = {
               buyerName: extracted.buyerName || extractedFromXml.buyerName,
               buyerCountry: extracted.buyerCountry || extractedFromXml.buyerCountry,
               winnerName: extracted.winnerName || extractedFromXml.winnerName,
               winnerNames: extracted.winnerNames.length > 0 ? extracted.winnerNames : extractedFromXml.winnerNames,
             };
-          }
         }
+
+        const analysisLines = uniqueNonEmpty([
+          ...collectStringsDeep(detail),
+          ...(
+            xmlText
+              ? cleanAnalysisText(xmlText)
+                .split(/(?<=[.;])\s+/)
+                .map((chunk) => chunk.trim())
+                .filter((chunk) => chunk.length >= 20)
+              : []
+          ),
+        ]);
 
         return {
           ...row,
@@ -995,6 +1148,12 @@ async function main() {
           buyerCountry: extracted.buyerCountry || row.buyerCountry,
           winnerName: extracted.winnerName || row.winnerName,
           winnerNames: extracted.winnerNames?.length ? extracted.winnerNames : row.winnerNames,
+          requirementsAnalysis: shouldRunRequirementsAnalysis
+            ? buildRequirementsAnalysis(analysisLines, {
+              hasDetail: Boolean(detail),
+              hasXml: Boolean(xmlText),
+            })
+            : row.requirementsAnalysis,
         };
       }),
     );
@@ -1013,6 +1172,7 @@ async function main() {
       sort: args.sort,
       page: args.page,
       withParties: args.withParties,
+      requirementsAnalysis: args.requirementsAnalysis,
     },
     generatedQuery,
     appliedRules: rules,

@@ -1,0 +1,4 @@
+interface:
+  display_name: "Procurement Intelligence Agent"
+  short_description: "Free-text TED search and rule filtering"
+  default_prompt: "Use $procurement-intelligence-agent to convert my natural-language request into a TED query, run the search, and apply logic rules."

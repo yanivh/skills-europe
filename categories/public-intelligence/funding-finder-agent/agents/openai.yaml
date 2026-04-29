@@ -1,0 +1,4 @@
+interface:
+  display_name: "Funding Finder Agent"
+  short_description: "EU grants and funding fit finder"
+  default_prompt: "Use $funding-finder-agent to find EU grants and funding programs that match my startup profile, then explain eligibility fit and deadlines."

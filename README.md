@@ -6,12 +6,13 @@ European-focused agent skills and supporting references.
 
 This repository currently contains two categories:
 
-- `categories/government-public_sector_data_platform/`
+- `categories/public-intelligence/`
 - `categories/sport/`
 
 Within these categories, the current skills are:
 
-- `categories/government-public_sector_data_platform/tenderpop-api-query-workflow/`
+- `categories/public-intelligence/procurement-intelligence-agent/`
+- `categories/public-intelligence/funding-finder-agent/`
 - `categories/sport/de/book_Acourse_fitnessfirst/`
 
 ## Repository Structure
@@ -24,9 +25,11 @@ Each skill lives in its own folder and can include:
 - `references/` for supporting rules and background material
 - `scripts/` for executable helpers used by the skill
 
-## Current Skill
+## Current Skills
 
-`tenderpop-api-query-workflow` converts free-text procurement requests into TED expert queries, runs live TED notice searches, and applies post-search filtering rules such as include/exclude terms, country filters, value bounds, scope selection, and result formatting.
+`procurement-intelligence-agent` converts free-text procurement requests into TED expert queries, runs live TED notice searches, and applies post-search filtering rules such as include/exclude terms, country filters, value bounds, scope selection, and result formatting.
+
+`funding-finder-agent` finds EU grants and innovation funding opportunities, scores startup eligibility fit, and highlights deadlines with source-backed links.
 
 ## Using With Codex
 
@@ -37,13 +40,15 @@ Example:
 ```bash
 python3 ~/.codex/skills/.system/skill-installer/scripts/install-skill-from-github.py \
   --repo yanivh/skills-europe \
-  --path categories/government-public_sector_data_platform/tenderpop-api-query-workflow
+  --path categories/public-intelligence/procurement-intelligence-agent
 ```
 
 See:
 
-- `categories/government-public_sector_data_platform/tenderpop-api-query-workflow/README.md`
-- `categories/government-public_sector_data_platform/tenderpop-api-query-workflow/SKILL.md`
+- `categories/public-intelligence/procurement-intelligence-agent/README.md`
+- `categories/public-intelligence/procurement-intelligence-agent/SKILL.md`
+- `categories/public-intelligence/funding-finder-agent/README.md`
+- `categories/public-intelligence/funding-finder-agent/SKILL.md`
 
 ## Adding More Skills
 
