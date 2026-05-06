@@ -34,6 +34,28 @@ Use $funding-finder-agent to list innovation funding programs for a healthtech s
 Use $funding-finder-agent to check eligibility fit for EIC-related funding for a 10-person B2B AI company.
 ```
 
+## More query examples
+
+```text
+Use $funding-finder-agent to find open EU grants for defence research in 2026, include deadlines and links.
+```
+
+```text
+Use $funding-finder-agent to find open EU grants for water research projects in 2026, include deadlines and source details.
+```
+
+```text
+Use $funding-finder-agent to list climate innovation funding calls in Europe for 2026 and rank by relevance.
+```
+
+```text
+Use $funding-finder-agent to find EU funding programs for smart cities decarbonization research, bilingual output.
+```
+
+```text
+Use $funding-finder-agent to list Jewish heritage and community grant programs in Europe, include timelines.
+```
+
 ## Run helper script directly
 
 ```bash
@@ -53,11 +75,11 @@ Use this format when presenting results in chat for quick scanning.
 
 ### Top programs
 
-| Program | Type | Fit | Deadline | Urgency | Why |
-| --- | --- | --- | --- | --- | --- |
-| Rothschild Collaborative Fellowships in Jewish Heritage | grant | low | unknown | unknown | sector-specific signal found |
-| EUJS Embracing Jewish Diversity | funding-program | low | unknown | unknown | sector-specific signal found |
-| Rothschild Foundation Hanadiv Europe Grants | grant | low | 2026-02-20 | high | explicit grant/funding wording |
+| Program | Type | Fit | Deadline | Urgency | Why | Link |
+| --- | --- | --- | --- | --- | --- | --- |
+| Rothschild Collaborative Fellowships in Jewish Heritage | grant | low | unknown | unknown | sector-specific signal found | https://rothschildfoundation.eu |
+| EUJS Embracing Jewish Diversity | funding-program | low | unknown | unknown | sector-specific signal found | https://www.eujs.org/grants |
+| Rothschild Foundation Hanadiv Europe Grants | grant | low | 2026-02-20 | high | explicit grant/funding wording | https://rothschildfoundation.eu/grants-page/ |
 
 ### Source grant details
 

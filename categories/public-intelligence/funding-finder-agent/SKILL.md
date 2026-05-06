@@ -101,6 +101,7 @@ When returning results in chat, prefer this report layout before raw JSON:
    - `Deadline`
    - `Urgency`
    - `Why`
+   - `Link` (use `sourceUrl`)
 2. `Source grant details` table with columns:
    - `Website`
    - `Focus areas`
