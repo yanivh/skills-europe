@@ -24,23 +24,35 @@ Nutze dieses Skill, wenn Kurse im Fitness First Mitgliederbereich gefunden oder 
 1. Pflichtfelder pruefen.
 2. Falls `runAt` gesetzt ist, bis zur Zielzeit warten.
 3. Startseite oeffnen: `https://www.fitnessfirst.de/mein-fitnessfirst`.
-4. Auf `Mitglieder-Login` bzw. `Logge dich ein!` klicken.
-5. EGYM-Login ausfuellen (`Email address`, `Password`) und `Sign in` klicken.
-6. Nach erfolgreichem Login auf `Kursbuchung` wechseln (direkt oder ueber `Kurse & Termine`).
-7. Auf `https://mein.fitnessfirst.de/member/courses` sicherstellen.
-8. Suchbereich festlegen:
+4. **Login-Status zuerst pruefen (optimiert):**
+- Wenn `Kursbuchung`, `Kurse & Termine` oder URL `https://mein.fitnessfirst.de/member/courses` bereits sichtbar ist: Login-Schritte ueberspringen.
+- Nur wenn kein eingeloggter Zustand erkannt wird: auf `Mitglieder-Login`/`Logge dich ein!` klicken, EGYM-Login ausfuellen (`Email address`, `Password`) und `Sign in` klicken.
+5. Nach erfolgreichem Login (oder wenn bereits eingeloggt) auf `Kursbuchung` wechseln.
+6. Auf `https://mein.fitnessfirst.de/member/courses` sicherstellen.
+7. Suchbereich festlegen:
 - Wenn `club` gesetzt ist: besten passenden Club waehlen.
 - Wenn `city` gesetzt und `club` leer ist: alle sichtbaren Clubs dieser Stadt durchlaufen.
 - Wenn weder `city` noch `club` gesetzt ist: `defaultClub` nutzen, falls vorhanden; sonst mit klarer Ursache beenden.
-9. Fuer jeden relevanten Club:
+8. Fuer jeden relevanten Club:
 - `Club auswaehlen`
 - Kursbutton mit bestmoeglich passendem `course` auswaehlen
 - rechte Kursliste scannen
-10. Modus anwenden:
+9. Modus anwenden:
 - `list`: offene, passende Moeglichkeiten sammeln und nichts klicken
 - `book`: genau passenden Slot finden und `Kurs buchen` klicken
-11. Nach jedem Buchungsklick auf Erfolgsmeldung/Statuswechsel pruefen (z. B. `Kurs gebucht`, Button wird `... stornieren`).
-12. Ergebnis strukturiert zurueckgeben.
+10. Nach jedem Buchungsklick auf Erfolgsmeldung/Statuswechsel pruefen (z. B. `Kurs gebucht`, Button wird `... stornieren`).
+11. Ergebnis strukturiert zurueckgeben.
+
+## Effizienz- und Token-Optimierung
+
+Diese Regeln reduzieren Browser-Schritte und unnoetige Snapshot-Last:
+
+1. Login zuerst pruefen und nur bei Bedarf ausfuehren (siehe Workflow Schritt 4).
+2. Nach Aktionen nur dann neue Page-Reads/Snapshots erzwingen, wenn sich URL, Bereich oder Zustand geaendert hat.
+3. Pro kritischem Schritt maximal 2 Retry-Versuche; danach mit eindeutiger Ursache abbrechen.
+4. Keine Endlosschleifen bei Navigation, Filterung oder Button-Suche.
+5. Bei `list` niemals Buchungsbutton klicken; nur lesen und aggregieren.
+6. Vor jedem neuen Club/Kurs-Scan vorhandene Seite wiederverwenden statt erneut zur Startseite zu springen.
 
 ## Modus `list`
 
