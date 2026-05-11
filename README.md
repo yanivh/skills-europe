@@ -7,12 +7,14 @@ European-focused agent skills and supporting references.
 This repository currently contains two categories:
 
 - `categories/public-intelligence/`
+- `categories/education-university_services/`
 - `categories/sport/`
 
 Within these categories, the current skills are:
 
 - `categories/public-intelligence/procurement-intelligence-agent/`
 - `categories/public-intelligence/funding-finder-agent/`
+- `categories/education-university_services/book-uzh-library-seat/`
 - `categories/sport/de/book_Acourse_fitnessfirst/`
 
 ## Repository Structure
@@ -30,6 +32,8 @@ Each skill lives in its own folder and can include:
 `procurement-intelligence-agent` converts free-text procurement requests into TED expert queries, runs live TED notice searches, and applies post-search filtering rules such as include/exclude terms, country filters, value bounds, scope selection, and result formatting.
 
 `funding-finder-agent` finds EU grants and innovation funding opportunities, scores startup eligibility fit, and highlights deadlines with source-backed links.
+
+`book-uzh-library-seat` automates Booked-UB seat search and booking for University of Zurich with login-first optimization and challenge-loop handling.
 
 ## Using With Codex
 
@@ -49,6 +53,8 @@ See:
 - `categories/public-intelligence/procurement-intelligence-agent/SKILL.md`
 - `categories/public-intelligence/funding-finder-agent/README.md`
 - `categories/public-intelligence/funding-finder-agent/SKILL.md`
+- `categories/education-university_services/book-uzh-library-seat/README.md`
+- `categories/education-university_services/book-uzh-library-seat/SKILL.md`
 
 ## Adding More Skills
 
